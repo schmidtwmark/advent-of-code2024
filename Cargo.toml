@@ -1,0 +1,21 @@
+[package]
+name = "aoc"
+version = "0.1.0"
+edition = "2018"
+authors = ["Mark Schmidt <mark.schmidt@hey.com>"]
+description = "Advent of Code 2022 solutions in Rust"
+
+
+[dependencies]
+itertools = "0.10.3"
+regex = "1.5.4"
+lazy_static = "1.4.0"
+log = "0.4"
+im = "15.1.0"
+scan_fmt = "0.2.6"
+simple_logger = "4.0.0"
+clap = { version = "4.0.29", features = ["derive"] }
+bimap = "0.6.2"
+hashbrown = "0.13.1"
+sscanf = "0.4.0"
+num = "0.4.0"
