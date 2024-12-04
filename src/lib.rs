@@ -368,6 +368,31 @@ impl<T: Default + Clone> Grid<T> {
                 }
             })
     }
+    pub fn neighbor_positions(&self, pos: (usize, usize)) -> Vec<(usize, usize)> {
+        let (x, y) = pos;
+        let delta = -1..=1;
+        delta
+            .clone()
+            .cartesian_product(delta)
+            .filter_map(move |(dx, dy)| {
+                if dx == 0 && dy == 0 {
+                    None
+                } else {
+                    let new_x = x as i64 + dx;
+                    let new_y = y as i64 + dy;
+                    if new_x >= 0
+                        && new_x < self.width as i64
+                        && new_y >= 0
+                        && new_y < self.height as i64
+                    {
+                        Some((new_x as usize, new_y as usize))
+                    } else {
+                        None
+                    }
+                }
+            })
+            .collect()
+    }
 
     pub fn horizontal_neighbors(
         &self,
