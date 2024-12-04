@@ -1,8 +1,6 @@
 use std::collections::HashSet;
 
 use aoc::{Grid, Solver};
-use itertools::Itertools;
-use log::debug;
 
 fn count_string_at_position(start_pos: (usize, usize), grid: &Grid<char>, string: &str) -> usize {
     let start_char = grid.at(start_pos);
