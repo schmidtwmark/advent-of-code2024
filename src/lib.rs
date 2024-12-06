@@ -282,6 +282,20 @@ impl<T: Default + Clone> Grid<T> {
         &self.state[self.pos_to_index(pos)]
     }
 
+    // Allow for negatives, which simplifies movement logic
+    pub fn get_isize(&self, pos: (isize, isize)) -> Option<&T> {
+        if pos.0 >= 0 && pos.1 >= 0 {
+            let (x, y) = (pos.0 as usize, pos.1 as usize);
+            if x < self.width && y < self.height {
+                Some(&self.state[self.pos_to_index((x, y))])
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
     pub fn get(&self, pos: (usize, usize)) -> Option<&T> {
         if pos.0 < self.width && pos.1 < self.height {
             Some(&self.state[self.pos_to_index(pos)])
