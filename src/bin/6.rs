@@ -1,9 +1,7 @@
 use core::panic;
-use std::{collections::HashSet, io::Empty, str::FromStr};
+use std::collections::HashSet;
 
 use aoc::{Grid, Solver};
-use itertools::Itertools;
-use log::debug;
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, Copy)]
 enum Direction {
@@ -56,37 +54,41 @@ impl GridObject {
     }
 }
 
+fn get_visited(grid: &Grid<GridObject>) -> HashSet<(isize, isize)> {
+    let guard_position = grid
+        .positions()
+        .find(|pos| *grid.at(*pos) == GridObject::Guard(Direction::Up))
+        .unwrap();
+    let mut guard_position = (guard_position.0 as isize, guard_position.1 as isize);
+    let mut direction = Direction::Up;
+    let mut visited = HashSet::<(isize, isize)>::new();
+    visited.insert(guard_position);
+
+    loop {
+        let new_position = direction.move_forward(guard_position);
+        if let Some(object) = grid.get_isize(new_position) {
+            match object {
+                GridObject::Wall => {
+                    direction = direction.turn_right();
+                }
+                GridObject::Empty | GridObject::Guard(_) => {
+                    visited.insert(new_position);
+                    guard_position = new_position;
+                }
+            }
+        } else {
+            break;
+        }
+    }
+
+    visited
+}
+
 struct Solution {}
 impl Solver<'_, usize> for Solution {
     fn solve_part_one(&self, lines: &[&str]) -> usize {
         let grid = Grid::from_lines(lines, &GridObject::from_char);
-        let guard_position = grid
-            .positions()
-            .find(|pos| *grid.at(*pos) == GridObject::Guard(Direction::Up))
-            .unwrap();
-        let mut guard_position = (guard_position.0 as isize, guard_position.1 as isize);
-        let mut direction = Direction::Up;
-        let mut visited = HashSet::<(isize, isize)>::new();
-        visited.insert(guard_position);
-
-        loop {
-            let new_position = direction.move_forward(guard_position);
-            if let Some(object) = grid.get_isize(new_position) {
-                match object {
-                    GridObject::Wall => {
-                        direction = direction.turn_right();
-                    }
-                    GridObject::Empty | GridObject::Guard(_) => {
-                        visited.insert(new_position);
-                        guard_position = new_position;
-                    }
-                }
-            } else {
-                break;
-            }
-        }
-
-        visited.len()
+        get_visited(&grid).len()
     }
 
     fn solve_part_two(&self, lines: &[&str]) -> usize {
@@ -97,11 +99,13 @@ impl Solver<'_, usize> for Solution {
             .unwrap();
         let guard_start = (guard_position.0 as isize, guard_position.1 as isize);
         let start_direction = Direction::Up;
+        let first_path_visited = get_visited(&grid);
 
         grid.positions()
             .filter(|pos| {
-                debug!("Checking {:?}", pos);
-                if grid.at(*pos) != &GridObject::Empty {
+                if !first_path_visited.contains(&(pos.0 as isize, pos.1 as isize))
+                    || grid.at(*pos) != &GridObject::Empty
+                {
                     return false;
                 }
                 let mut grid = grid.clone();
