@@ -16,7 +16,7 @@ fn main() {
     let sample = include_str!("../../samples/aaaaa.txt");
     let input = include_str!("../../inputs/aaaaa.txt");
     let part_one_problems = [
-        aoc::Input::new_sample(sample, Default::default()), // TODO: Fill in expected sample result
+        aoc::Input::new_sample(sample, 3749),
         aoc::Input::new_final(input),
     ];
 
