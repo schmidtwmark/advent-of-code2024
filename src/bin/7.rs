@@ -1,7 +1,4 @@
-use core::panic;
-
 use aoc::Solver;
-use itertools::Itertools;
 use log::debug;
 
 fn is_valid(ans: usize, running_total: usize, nums: &[usize]) -> bool {
@@ -26,9 +23,7 @@ fn is_valid2(ans: usize, running_total: usize, nums: &[usize]) -> bool {
         let sum = running_total + num;
         let product = running_total * num;
         let string_concat = format!("{running_total}{num}");
-        let concat = string_concat
-            .parse::<usize>()
-            .unwrap_or_else(|_| panic!("Failed to parse {string_concat}"));
+        let concat = string_concat.parse::<usize>().unwrap();
 
         (sum <= ans && is_valid2(ans, sum, remainder))
             || (product <= ans && is_valid2(ans, product, remainder))
