@@ -39,7 +39,7 @@ impl Display for Node {
 }
 
 // Use display to concat each node to a single string and return
-fn nodes_to_string(nodes: &[Node]) -> String {
+fn _nodes_to_string(nodes: &[Node]) -> String {
     nodes.iter().map(|n| n.to_string()).join("")
 }
 
