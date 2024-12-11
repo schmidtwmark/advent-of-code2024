@@ -2,12 +2,11 @@ use std::collections::HashMap;
 
 use aoc::Solver;
 use itertools::Itertools;
-use log::debug;
 
 type Answer = usize;
 
 const PART_ONE_SAMPLE_ANSWER: Answer = 55312;
-const PART_TWO_SAMPLE_ANSWER: Answer = 0;
+const PART_TWO_SAMPLE_ANSWER: Answer = 65601038650482;
 
 fn blink_value(value: usize) -> (usize, Option<usize>) {
     if value == 0 {
