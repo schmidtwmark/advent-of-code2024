@@ -7,7 +7,7 @@ const PART_ONE_SAMPLE_ANSWER: Answer = 0;
 const PART_TWO_SAMPLE_ANSWER: Answer = 0;
 
 struct Solution {}
-impl Solver<'_, usize> for Solution {
+impl Solver<'_, Answer> for Solution {
     fn solve_part_one(&self, lines: &[&str]) -> Answer {
         Answer::default()
     }

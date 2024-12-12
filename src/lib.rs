@@ -241,6 +241,46 @@ pub struct Grid<T> {
     pub height: usize,
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
+pub enum Cardinal {
+    North,
+    South,
+    East,
+    West,
+}
+
+impl Cardinal {
+    pub fn opposite(&self) -> Cardinal {
+        match self {
+            Cardinal::North => Cardinal::South,
+            Cardinal::South => Cardinal::North,
+            Cardinal::East => Cardinal::West,
+            Cardinal::West => Cardinal::East,
+        }
+    }
+    pub fn clockwise(&self) -> Cardinal {
+        match self {
+            Cardinal::North => Cardinal::East,
+            Cardinal::South => Cardinal::West,
+            Cardinal::East => Cardinal::South,
+            Cardinal::West => Cardinal::North,
+        }
+    }
+
+    pub fn counter_clockwise(&self) -> Cardinal {
+        self.clockwise().clockwise().clockwise()
+    }
+
+    pub fn all() -> Vec<Cardinal> {
+        vec![
+            Cardinal::North,
+            Cardinal::South,
+            Cardinal::East,
+            Cardinal::West,
+        ]
+    }
+}
+
 impl<T: Default + Clone> Grid<T> {
     pub fn new_empty(width: usize, height: usize) -> Grid<T> {
         Grid {
@@ -280,6 +320,59 @@ impl<T: Default + Clone> Grid<T> {
 
     pub fn at(&self, pos: (usize, usize)) -> &T {
         &self.state[self.pos_to_index(pos)]
+    }
+    pub fn at_isize(&self, pos: (isize, isize)) -> &T {
+        self.get_isize(pos).unwrap()
+    }
+
+    pub fn get_neighbor_position(
+        &self,
+        pos: (usize, usize),
+        cardinal: Cardinal,
+    ) -> Option<(usize, usize)> {
+        match cardinal {
+            Cardinal::North => {
+                if pos.1 >= 1 {
+                    Some((pos.0, pos.1 - 1))
+                } else {
+                    None
+                }
+            }
+            Cardinal::South => Some((pos.0, pos.1 + 1)),
+            Cardinal::West => {
+                if pos.0 >= 1 {
+                    Some((pos.0 - 1, pos.1))
+                } else {
+                    None
+                }
+            }
+            Cardinal::East => Some((pos.0 + 1, pos.1)),
+        }
+    }
+
+    pub fn get_neighbor_at(&self, pos: (usize, usize), cardinal: Cardinal) -> Option<&T> {
+        if let Some(neighbor) = match cardinal {
+            Cardinal::North => {
+                if pos.1 >= 1 {
+                    Some((pos.0, pos.1 - 1))
+                } else {
+                    None
+                }
+            }
+            Cardinal::South => Some((pos.0, pos.1 + 1)),
+            Cardinal::East => {
+                if pos.0 >= 1 {
+                    Some((pos.0 - 1, pos.1))
+                } else {
+                    None
+                }
+            }
+            Cardinal::West => Some((pos.0 - 1, pos.1)),
+        } {
+            self.get(neighbor)
+        } else {
+            None
+        }
     }
 
     // Allow for negatives, which simplifies movement logic
