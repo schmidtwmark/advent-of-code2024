@@ -45,17 +45,10 @@ fn solve(
     (b_x, b_y): (isize, isize),
     (p_x, p_y): (isize, isize),
 ) -> Option<isize> {
-    let a = a_x;
-    let b = b_x;
-    let c = p_x;
-    let d = a_y;
-    let e = b_y;
-    let f = p_y;
-
-    let x_numerator = c * e - b * f;
-    let x_denominator = a * e - b * d;
-    let y_numerator = a * f - d * c;
-    let y_denominator = a * e - b * d;
+    let x_numerator = p_x * b_y - b_x * p_y;
+    let x_denominator = a_x * b_y - b_x * a_y;
+    let y_numerator = a_x * p_y - a_y * p_x;
+    let y_denominator = a_x * b_y - b_x * a_y;
 
     if x_denominator == 0 || y_denominator == 0 {
         None
