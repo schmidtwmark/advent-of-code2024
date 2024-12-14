@@ -1,7 +1,7 @@
 use aoc::Solver;
 use itertools::Itertools;
 use log::debug;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashSet, VecDeque};
 
 type Answer = isize;
 
@@ -81,7 +81,7 @@ fn regions(lines: &[&str]) -> Vec<Region> {
                                 return false;
                             }
                         }
-                        return true;
+                        true
                     });
                     for edge_dir in edge_dirs {
                         map.insert((*pos, edge_dir));
