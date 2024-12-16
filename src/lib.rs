@@ -289,6 +289,15 @@ impl Cardinal {
             _ => panic!("Unknown cardinal"),
         }
     }
+
+    pub fn to_char(&self) -> char {
+        match self {
+            Cardinal::North => '^',
+            Cardinal::South => 'v',
+            Cardinal::East => '>',
+            Cardinal::West => '<',
+        }
+    }
 }
 
 impl<T: Default + Clone> Grid<T> {
