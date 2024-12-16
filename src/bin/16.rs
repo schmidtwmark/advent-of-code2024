@@ -158,11 +158,15 @@ impl Solver<'_, Answer> for Solution {
             }
             if vertex == end_position {
                 debug!("Found an end with cost: {}", cost);
-                if cost < min_cost {
-                    best_paths = vec![path];
-                    min_cost = cost;
-                } else if cost == min_cost {
-                    best_paths.push(path);
+                match cost.cmp(&min_cost) {
+                    std::cmp::Ordering::Less => {
+                        min_cost = cost;
+                        best_paths = vec![path.clone()];
+                    }
+                    std::cmp::Ordering::Equal => {
+                        best_paths.push(path.clone());
+                    }
+                    std::cmp::Ordering::Greater => {}
                 }
             } else {
                 // Check forward
