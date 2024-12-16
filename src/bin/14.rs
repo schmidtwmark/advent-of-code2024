@@ -14,7 +14,7 @@ fn debug_robots(grid_size: (isize, isize), robots: &HashMap<(isize, isize), Vec<
     for y in 0..grid_size.1 {
         let line = (0..grid_size.0)
             .map(|x| {
-                if let Some(velocities) = robots.get(&(x, y)) {
+                if let Some(_velocities) = robots.get(&(x, y)) {
                     '*'
                     // if velocities.len() >= 10 {
                     //     '*'

@@ -279,6 +279,16 @@ impl Cardinal {
             Cardinal::West,
         ]
     }
+
+    pub fn from_char(c: char) -> Cardinal {
+        match c {
+            'N' | '^' => Cardinal::North,
+            'S' | 'v' => Cardinal::South,
+            'E' | '>' => Cardinal::East,
+            'W' | '<' => Cardinal::West,
+            _ => panic!("Unknown cardinal"),
+        }
+    }
 }
 
 impl<T: Default + Clone> Grid<T> {
@@ -338,7 +348,13 @@ impl<T: Default + Clone> Grid<T> {
                     None
                 }
             }
-            Cardinal::South => Some((pos.0, pos.1 + 1)),
+            Cardinal::South => {
+                if pos.1 < (self.height - 1) {
+                    Some((pos.0, pos.1 + 1))
+                } else {
+                    None
+                }
+            }
             Cardinal::West => {
                 if pos.0 >= 1 {
                     Some((pos.0 - 1, pos.1))
@@ -346,8 +362,28 @@ impl<T: Default + Clone> Grid<T> {
                     None
                 }
             }
-            Cardinal::East => Some((pos.0 + 1, pos.1)),
+            Cardinal::East => {
+                if pos.0 < (self.width - 1) {
+                    Some((pos.0 + 1, pos.1))
+                } else {
+                    None
+                }
+            }
         }
+    }
+
+    pub fn get_neighbors_along_cardinal(
+        &self,
+        pos: (usize, usize),
+        cardinal: Cardinal,
+    ) -> Vec<(usize, usize)> {
+        let mut neighbors = Vec::new();
+        let mut neighbor = self.get_neighbor_position(pos, cardinal);
+        while let Some(n) = neighbor {
+            neighbors.push(n);
+            neighbor = self.get_neighbor_position(n, cardinal);
+        }
+        neighbors
     }
 
     pub fn get_neighbor_at(&self, pos: (usize, usize), cardinal: Cardinal) -> Option<&T> {
