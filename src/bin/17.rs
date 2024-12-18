@@ -1,9 +1,13 @@
 use aoc::Solver;
 use core::panic;
 use itertools::Itertools;
-use log::{debug, trace};
+use log::{debug, info, trace};
 use regex::Regex;
-use std::{collections::HashMap, ops::BitXor, process::Output};
+use std::{
+    collections::{HashMap, VecDeque},
+    ops::BitXor,
+    process::Output,
+};
 
 type Answer = String;
 
@@ -160,81 +164,43 @@ impl Solver<'_, Answer> for Solution {
     }
 
     fn solve_part_two(&self, lines: &[&str]) -> Answer {
-        let input = Input::from_lines(lines);
-        let target = input.program.clone();
-        let mut min = 0;
-        let mut max = 1_000_000_000_000_000usize;
+        let mut input = Input::from_lines(lines);
 
-        let get_output = |a_val: usize| -> Vec<isize> {
-            let mut input_copy = input.clone();
+        // let mut a_val = 0;
+        // let mut current_target_output = Vec::new();
 
-            input_copy.registers.insert('A', a_val as isize);
+        let mut queue = VecDeque::new();
+        queue.push_back(0);
 
-            while input_copy.process().0 {}
-            debug!("a_val: {} output: {:?}", a_val, input_copy.output);
-            input_copy.output
-        };
-
-        // Binary search to find a range that at least gets the right number of outputs
-        let target_count = target.len() - 1;
-        debug!("target length: {}", target.len());
-        debug!("target_count: {}", target_count);
-        while min < max {
-            let midpoint = (min + max) / 2;
-            let out_mid = get_output(midpoint);
-            debug!("mid count: {}", out_mid.len());
-
-            match out_mid.len().cmp(&target_count) {
-                std::cmp::Ordering::Equal => {
-                    min = midpoint;
-                    break;
-                }
-                std::cmp::Ordering::Greater => max = midpoint - 1,
-                std::cmp::Ordering::Less => min = midpoint + 1,
+        let mut i = 0;
+        while !queue.is_empty() {
+            let expected_output = input
+                .program
+                .iter()
+                .skip(input.program.len() - i - 1)
+                .copied()
+                .collect_vec();
+            if i == input.program.len() {
+                return queue.iter().min().unwrap().to_string();
             }
-        }
 
-        debug!("First search min: {} max: {}", min, max);
-
-        return String::new();
-        let mut a_val = min;
-        loop {
-            let mut target_it = target.iter();
-            let mut target_current = target_it.next().unwrap();
-            let mut input_copy = input.clone();
-
-            input_copy.registers.insert('A', a_val as isize);
-            loop {
-                let (should_continue, maybe_output) = input_copy.process();
-                if !should_continue {
-                    if a_val % 10000 == 0 {
-                        debug!("a_val: {} halted:\toutput: {:?}", a_val, input_copy.output);
-                    }
-                    break;
-                }
-                if let Some(output) = maybe_output {
-                    if output == *target_current {
-                        if let Some(next) = target_it.next() {
-                            target_current = next;
-                        } else {
-                            debug!("Found it! output: {:?} a_val: {}", input_copy.output, a_val);
-                            break;
-                        }
-                    } else {
-                        if a_val % 100000 == 0 {
-                            debug!("a_val: {} error:\toutput: {:?}", a_val, input_copy.output);
-                        }
-                        break;
+            for _ in 0..queue.len() {
+                let value = queue.pop_front().unwrap();
+                for k in 0..8 {
+                    let a = 8 * value + k;
+                    let mut input_clone = input.clone();
+                    input_clone.registers.insert('A', a);
+                    while input_clone.process().0 {}
+                    if input_clone.output == expected_output {
+                        queue.push_back(a);
                     }
                 }
             }
-            if input_copy.output == target {
-                break;
-            }
 
-            a_val += 1;
+            i += 1;
         }
-        a_val.to_string()
+
+        "".to_string()
     }
 }
 
