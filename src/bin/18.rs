@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashSet, VecDeque},
-    fmt::format,
-};
+use std::collections::{HashSet, VecDeque};
 
 use aoc::{Grid, Solver};
 use itertools::Itertools;

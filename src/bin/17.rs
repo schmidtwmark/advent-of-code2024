@@ -1,12 +1,11 @@
 use aoc::Solver;
 use core::panic;
 use itertools::Itertools;
-use log::{debug, info, trace};
+use log::trace;
 use regex::Regex;
 use std::{
     collections::{HashMap, VecDeque},
     ops::BitXor,
-    process::Output,
 };
 
 type Answer = String;
@@ -164,7 +163,7 @@ impl Solver<'_, Answer> for Solution {
     }
 
     fn solve_part_two(&self, lines: &[&str]) -> Answer {
-        let mut input = Input::from_lines(lines);
+        let input = Input::from_lines(lines);
 
         // let mut a_val = 0;
         // let mut current_target_output = Vec::new();
