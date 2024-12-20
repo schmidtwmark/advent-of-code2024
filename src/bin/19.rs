@@ -48,22 +48,6 @@ fn is_valid<'a>(
 }
 
 fn count_is_valid<'a>(pattern: &'a str, designs: &HashMap<&'a str, usize>) -> usize {
-    // if let Some(count) = designs.get(pattern) {
-    //     *count
-    // } else {
-    //     for i in 1..pattern.len() {
-    //         let front = &pattern[0..i];
-    //         let back = &pattern[i..];
-    //         if let Some(count) = designs.get(front).copied() {
-    //             let back_count = count_is_valid(back, designs);
-    //             if back_count > 0 {
-    //                 designs.insert(pattern, 1 + count * back_count);
-    //             }
-    //             return 0;
-    //         }
-    //     }
-    //     0
-    // }
     debug!("Checking pattern: {}", pattern);
     if pattern.is_empty() {
         return 1;
@@ -78,6 +62,37 @@ fn count_is_valid<'a>(pattern: &'a str, designs: &HashMap<&'a str, usize>) -> us
             total += count_is_valid(back, designs);
         }
     }
+    total
+}
+
+fn count_is_valid_cache<'a>(
+    pattern: &'a str,
+    designs: &HashMap<&'a str, usize>,
+    cache: &mut HashMap<&'a str, usize>,
+) -> usize {
+    debug!("Checking pattern: {}", pattern);
+    if pattern.is_empty() {
+        return 1;
+    }
+    if let Some(count) = cache.get(pattern) {
+        return *count;
+    }
+    if let Some(count) = designs.get(pattern) {
+        return *count;
+    }
+    let mut total = 0;
+    for (design, _) in designs.iter() {
+        if let Some(back) = pattern.strip_prefix(design) {
+            debug!("Found combination: {} + {}", design, back);
+            if let Some(back_count) = cache.get(pattern) {
+                total += back_count
+            } else {
+                total += count_is_valid_cache(back, designs, cache);
+            }
+        }
+    }
+    debug!("Inserting {pattern}: {total} into cache");
+    cache.insert(pattern, total);
     total
 }
 
@@ -116,34 +131,7 @@ impl Solver<'_, Answer> for Solution {
             .iter()
             .map(|pattern| {
                 info!("Checking pattern: {}", pattern);
-                let count = count_is_valid(pattern, &designs);
-                // let mut queue = VecDeque::new();
-                // let mut count = 0;
-                // queue.push_back((*pattern, 1));
-
-                // while let Some((pattern, p_count)) = queue.pop_front() {
-                //     for i in 1usize..pattern.len() {
-                //         let front = &pattern[0..i];
-                //         let back = &pattern[i..];
-
-                //         match (designs.get(front).copied(), designs.get(back).copied()) {
-                //             (Some(front_count), Some(back_count)) => {
-                //                 debug!(
-                //                     "Found result for pattern: {}: {} * {}",
-                //                     pattern, front_count, back_count,
-                //                 );
-                //                 let total_count = front_count * back_count * p_count;
-                //                 designs.insert(pattern, total_count);
-                //                 count += total_count;
-                //             }
-                //             (Some(_front_count), None) => {
-                //                 queue.push_back((back, p_count));
-                //             }
-                //             _ => {}
-                //         }
-                //     }
-                // }
-
+                let count = count_is_valid_cache(pattern, &designs, &mut HashMap::new());
                 info!("Found result for pattern: {}: {:?}", pattern, count);
                 count
             })
