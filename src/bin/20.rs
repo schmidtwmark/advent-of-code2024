@@ -56,6 +56,27 @@ fn shortest_path(
     }
     None
 }
+fn shortest_paths_to(
+    grid: &Grid<GridObject>,
+    target: (usize, usize),
+) -> HashMap<(usize, usize), usize> {
+    let mut queue = VecDeque::new();
+    let mut map = HashMap::new();
+    queue.push_back((target, 0));
+    map.insert(target, 0);
+    while let Some((pos, length)) = queue.pop_front() {
+        let neighbors = grid.cardinal_neighbor_positions(pos);
+        for neighbor in neighbors {
+            if !map.contains_key(&neighbor)
+                && (*grid.at(neighbor) == GridObject::Path || *grid.at(neighbor) == GridObject::End)
+            {
+                queue.push_back((neighbor, length + 1));
+                map.insert(neighbor, length + 1);
+            }
+        }
+    }
+    map
+}
 
 fn manhattan_within_d(
     (x, y): (usize, usize),
@@ -143,6 +164,8 @@ impl Solver<'_, Answer> for Solution {
         let base_shortest = shortest_path(&grid, start, end).unwrap();
         debug!("base_shortest: {}", base_shortest);
 
+        let shortest_path_map = shortest_paths_to(&grid, end);
+
         let mut cheat_savings: HashMap<usize, Vec<Cheat>> = HashMap::new();
         let mut queue = VecDeque::new();
         let mut visited = HashSet::new();
@@ -172,12 +195,21 @@ impl Solver<'_, Answer> for Solution {
                 for cheat_position in positions {
                     let cheat = Some((pos, cheat_position));
                     if !visited.contains(&(cheat_position, cheat)) {
-                        queue.push_back((
-                            cheat_position,
-                            length + distance(pos, cheat_position),
-                            Some((pos, cheat_position)),
-                        ));
-                        visited.insert((cheat_position, cheat));
+                        let cheat_shortest = shortest_path_map.get(&cheat_position).unwrap();
+                        let total_length = length + distance(pos, cheat_position) + cheat_shortest;
+                        if total_length <= base_shortest {
+                            let savings = base_shortest - total_length;
+                            cheat_savings
+                                .entry(savings)
+                                .or_default()
+                                .push((pos, cheat_position));
+                        }
+                        // queue.push_back((
+                        //     cheat_position,
+                        //     length + distance(pos, cheat_position),
+                        //     Some((pos, cheat_position)),
+                        // ));
+                        // visited.insert((cheat_position, cheat));
                     }
                 }
             }
