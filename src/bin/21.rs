@@ -1,14 +1,18 @@
+use cached::proc_macro::cached;
 use core::panic;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    sync::OnceLock,
+};
 
 use aoc::{Cardinal, Graph, Solver};
-use itertools::{Diff, Itertools};
+use itertools::Itertools;
 use log::debug;
 
 type Answer = usize;
 
 const PART_ONE_SAMPLE_ANSWER: Answer = 126384;
-const PART_TWO_SAMPLE_ANSWER: Answer = 0;
+const PART_TWO_SAMPLE_ANSWER: Answer = 154115708116294;
 
 #[derive(Debug, Clone, Eq, PartialEq, Copy, Hash)]
 enum Button {
@@ -26,7 +30,7 @@ impl Button {
         }
     }
 
-    pub fn to_char(&self) -> char {
+    pub fn _to_char(&self) -> char {
         match self {
             Button::Activate => 'A',
             Button::Direction(c) => c.to_char(),
@@ -78,191 +82,117 @@ fn build_directional_keypad() -> Graph<Button, Cardinal> {
     directional_keypad.debug_connections();
     directional_keypad
 }
-fn find_shortest_path(graph: &Graph<Button, Cardinal>, start: Button, end: Button) -> Vec<Button> {
-    let mut visited = HashSet::new();
-    let mut queue = VecDeque::new();
-    queue.push_back((start, Vec::new()));
 
-    while let Some((vertex, path)) = queue.pop_front() {
-        // debug!("Visiting vertex {:?} with path {:?})", vertex, path);
-        if vertex == end {
-            return path;
-        }
-
-        if let Some(edges) = graph.edges.get(&vertex) {
-            for (neighbor, direction) in edges {
-                if visited.contains(&neighbor) {
-                    continue;
-                }
-                visited.insert(neighbor);
-                let mut new_path = path.clone();
-                new_path.push(Button::Direction(*direction));
-                queue.push_back((*neighbor, new_path));
-            }
-        }
-    }
-    panic!("No path found");
-}
-
-fn find_all_paths(graph: &Graph<Button, Cardinal>, start: Button, end: Button) -> Vec<Vec<Button>> {
-    let mut queue = VecDeque::new();
-    queue.push_back((start, Vec::<(Button, Cardinal)>::new()));
-    let mut all_paths = Vec::new();
-    let mut lowest = usize::MAX;
-
-    while let Some((vertex, path)) = queue.pop_front() {
-        if vertex == end && path.len() < lowest {
-            lowest = path.len();
-            all_paths.push(path.iter().map(|b| Button::Direction(b.1)).collect_vec());
-            continue;
-        }
-
-        if let Some(edges) = graph.edges.get(&vertex) {
-            for (neighbor, direction) in edges {
-                if path.iter().any(|(b, _)| b == neighbor) || *neighbor == start {
-                    continue;
-                }
-                let mut new_path = path.clone();
-                new_path.push((*neighbor, *direction));
-                queue.push_back((*neighbor, new_path));
-            }
-        }
-    }
-    all_paths
-}
-
-fn build_path_map(
-    graph_a: &Graph<Button, Cardinal>,
-    up_dimension_shortest_path: &dyn Fn(Button, Button) -> Vec<Button>,
-) -> HashMap<(Button, Button), Vec<Button>> {
-    graph_a
+fn build_path_map(graph: &Graph<Button, Cardinal>) -> HashMap<(Button, Button), Vec<Vec<Button>>> {
+    graph
         .all_vertices()
-        .cartesian_product(graph_a.edges.keys())
+        .cartesian_product(graph.edges.keys())
         .fold(HashMap::new(), |mut acc, (start, end)| {
-            let all_paths = find_all_paths(graph_a, *start, *end);
+            let mut queue = VecDeque::new();
+            queue.push_back((start, Vec::new(), HashSet::new()));
 
-            let (best_path, best_commands) = all_paths
-                .into_iter()
-                .map(|target_path| {
-                    let shortest_path =
-                        target_path
-                            .iter()
-                            .tuple_windows()
-                            .fold(Vec::new(), |mut acc, (a, b)| {
-                                // let mut directional_path = find_shortest_path(graph_b, *a, *b);
-                                let mut directional_path = up_dimension_shortest_path(*a, *b);
-                                acc.append(&mut directional_path);
-                                acc.push(Button::Activate);
-                                acc
-                            });
-                    (target_path, shortest_path)
-                })
-                .min_by_key(|(_, shortest)| shortest.len())
-                .unwrap();
+            let mut paths = Vec::new();
+            let mut lowest = usize::MAX;
 
-            debug!("Best path from {:?} to {:?}: {:?}", start, end, best_path);
-            debug!(
-                "Best commands from {:?} to {:?}: {:?}",
-                start, end, best_commands
-            );
+            while let Some((node, path, mut visited)) = queue.pop_front() {
+                if node == end {
+                    if path.len() <= lowest {
+                        lowest = path.len();
+                        paths.push(path);
+                    }
+                    continue;
+                }
 
-            *acc.entry((*start, *end)).or_default() = best_path;
+                if visited.contains(&node) {
+                    continue;
+                }
+                visited.insert(node);
+
+                for (neighbor, direction) in graph.edges.get(node).unwrap() {
+                    let mut path = path.clone();
+                    path.push(Button::Direction(*direction));
+                    queue.push_back((neighbor, path, visited.clone()));
+                }
+            }
+
+            acc.insert((*start, *end), paths);
 
             acc
         })
 }
 
+type PathMap = HashMap<(Button, Button), Vec<Vec<Button>>>;
+
+fn numeric_map() -> &'static PathMap {
+    static NUMERIC_PATHS: OnceLock<PathMap> = OnceLock::new();
+    NUMERIC_PATHS.get_or_init(|| {
+        let numeric_keypad = build_numeric_keypad();
+        build_path_map(&numeric_keypad)
+    })
+}
+
+fn direction_map() -> &'static PathMap {
+    static DIRECTION_PATHS: OnceLock<PathMap> = OnceLock::new();
+    DIRECTION_PATHS.get_or_init(|| {
+        let direction_keypad = build_directional_keypad();
+        build_path_map(&direction_keypad)
+    })
+}
+
 struct Solution {}
 impl Solver<'_, Answer> for Solution {
     fn solve_part_one(&self, lines: &[&str]) -> Answer {
-        let numeric_keypad = build_numeric_keypad();
-        let directional_keypad = build_directional_keypad();
-
-        let direction_map = build_path_map(&directional_keypad, &|a, b| {
-            find_shortest_path(&directional_keypad, a, b)
-        });
-        let number_map = build_path_map(&numeric_keypad, &|a, b| {
-            let best_path = &direction_map[&(a, b)];
-            best_path.clone()
-        });
-
-        lines
-            .iter()
-            .map(|s| get_complexity(&direction_map, &number_map, s, 2))
-            .sum()
+        lines.iter().map(|s| get_complexity(s, 2)).sum()
     }
 
     fn solve_part_two(&self, lines: &[&str]) -> Answer {
-        let numeric_keypad = build_numeric_keypad();
-        let directional_keypad = build_directional_keypad();
-
-        let direction_map = build_path_map(&directional_keypad, &|a, b| {
-            find_shortest_path(&directional_keypad, a, b)
-        });
-        let number_map = build_path_map(&numeric_keypad, &|a, b| {
-            let best_path = &direction_map[&(a, b)];
-            best_path.clone()
-        });
-        lines
-            .iter()
-            .map(|s| get_complexity(&direction_map, &number_map, s, 25))
-            .sum()
+        lines.iter().map(|s| get_complexity(s, 25)).sum()
     }
 }
 
-fn get_complexity(
-    direction_map: &HashMap<(Button, Button), Vec<Button>>,
-    number_map: &HashMap<(Button, Button), Vec<Button>>,
-    s: &&str,
-    levels: usize,
-) -> usize {
+#[cached]
+fn get_shortest(sequence: Vec<Button>, depth: usize, number_keypad: bool) -> usize {
+    let map = if number_keypad {
+        numeric_map()
+    } else {
+        direction_map()
+    };
+
+    [Button::Activate]
+        .iter()
+        .chain(sequence.iter())
+        .tuple_windows()
+        .map(|(a, b)| {
+            let shortest_paths = map.get(&(*a, *b)).unwrap();
+
+            if depth == 0 {
+                shortest_paths[0].len() + 1
+            } else {
+                shortest_paths
+                    .iter()
+                    .cloned()
+                    .map(|mut path| {
+                        path.push(Button::Activate);
+                        get_shortest(path, depth - 1, false)
+                    })
+                    .min()
+                    .unwrap()
+            }
+        })
+        .sum::<usize>()
+}
+
+fn get_complexity(s: &&str, levels: usize) -> usize {
     let numeric = s[0..3].parse::<usize>().unwrap();
 
-    let mut buttons = s.chars().map(Button::from_char).collect_vec();
-    buttons.insert(0, Button::Activate);
-
-    let shortest_path = buttons
-        .iter()
-        .tuple_windows()
-        .fold(Vec::new(), |mut acc, (a, b)| {
-            let numeric_path = &number_map[&(*a, *b)];
-            acc.append(&mut numeric_path.clone());
-            acc.push(Button::Activate);
-            acc
-        });
-    debug!(
-        "{s} Shortest path: {}",
-        shortest_path.iter().map(|c| c.to_char()).join("")
-    );
-
-    let mut target_path = shortest_path.clone();
-
-    for level in 0..levels {
-        target_path.insert(0, Button::Activate);
-        let shortest_path =
-            target_path
-                .iter()
-                .tuple_windows()
-                .fold(Vec::new(), |mut acc, (a, b)| {
-                    let numeric_path = &direction_map[&(*a, *b)];
-                    acc.append(&mut numeric_path.clone());
-                    acc.push(Button::Activate);
-                    acc
-                });
-        debug!(
-            "Level {level} with length {len} Shortest path: {path}",
-            len = shortest_path.len(),
-            path = shortest_path.iter().map(|c| c.to_char()).join("")
-        );
-        target_path = shortest_path;
-    }
+    let buttons = s.chars().map(Button::from_char).collect_vec();
 
     debug!(
-        "Code {s} with numeric {numeric} has path of length {}",
-        target_path.len()
+        "Numeric: {}, Buttons: {:?}, Levels: {}",
+        numeric, buttons, levels
     );
 
-    numeric * target_path.len()
+    numeric * get_shortest(buttons, levels, true)
 }
 
 fn main() {
