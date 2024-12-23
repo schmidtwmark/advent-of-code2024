@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashSet, VecDeque},
-    thread::current,
-};
+use std::collections::HashSet;
 
 use aoc::{Graph, Solver};
 use itertools::Itertools;
