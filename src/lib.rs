@@ -663,7 +663,7 @@ impl<T: Display> Display for Grid<T> {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Graph<V, E> {
     pub edges: HashMap<V, HashMap<V, E>>,
 }
@@ -755,5 +755,33 @@ where
         }
         info!("Never found end!");
         None
+    }
+
+    pub fn connected_components(&self) -> Vec<HashSet<V>> {
+        let mut visited = HashSet::new();
+        let mut components = Vec::new();
+        for vertex in self.all_vertices() {
+            if visited.contains(vertex) {
+                continue;
+            }
+            let mut component = HashSet::new();
+            let mut queue = VecDeque::new();
+            queue.push_back(vertex.clone());
+            visited.insert(vertex.clone());
+            while let Some(v) = queue.pop_front() {
+                component.insert(v.clone());
+                for neighbor in self.edges.get(&v).unwrap().keys() {
+                    if !visited.contains(neighbor) && !component.contains(neighbor) {
+                        queue.push_back(neighbor.clone());
+                    }
+                }
+            }
+
+            for c in component.iter() {
+                visited.insert(c.clone());
+            }
+            components.push(component);
+        }
+        components
     }
 }
