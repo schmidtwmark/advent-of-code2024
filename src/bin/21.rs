@@ -1,5 +1,4 @@
 use cached::proc_macro::cached;
-use core::panic;
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     sync::OnceLock,
